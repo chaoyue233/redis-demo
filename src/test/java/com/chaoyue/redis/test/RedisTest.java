@@ -29,4 +29,27 @@ public class RedisTest extends AbstractSpringContextTest {
         String result = redisCache.getString(key);
         System.out.println(result);
     }
+
+    @Test
+    public void sendMessageTest() {
+        RedisCache redisCache = redisCacheManager.getRedisCache();
+
+        String channel = "chaoyue_channel";
+        String value = "chaoyue_value_1";
+        redisCache.publish(channel, value);
+        // 需要通过客户端接受消息来验证是否发送成功
+    }
+
+    @Test
+    public void incrementTest() throws InterruptedException {
+        RedisCache redisCache = redisCacheManager.getRedisCache();
+        String key = "chaoyue_string";
+        for (int i = 0; i < 10; i++) {
+            System.out.println(redisCache.increment(key, 1L, 100));
+        }
+        redisCache.increment(key, 1L, 100);
+        System.out.println("wait to clear");
+        Thread.sleep(1000);
+        System.out.println(redisCache.increment(key, 1L, 100));
+    }
 }

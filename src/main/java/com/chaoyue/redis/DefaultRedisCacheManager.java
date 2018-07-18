@@ -17,12 +17,13 @@ import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * 基于 RedisTemplate 的扩展实现 处理对redis的基本操作
+ * 使用内部类实现 doInRedis 操作 RedisConnection 去实现想要的功能
+ * RedisTemplate 内部也是这样操作的，这边只是再抽象一层 方便进行统一的Cache层封装
+ */
 @Slf4j
 public class DefaultRedisCacheManager implements RedisCacheManager {
-
-    /**
-     * RedisTemplate
-     */
 
     private RedisTemplate<String, Serializable> redisTemplate;
 
@@ -37,10 +38,6 @@ public class DefaultRedisCacheManager implements RedisCacheManager {
      */
     public void setRedisTemplate(RedisTemplate<String, Serializable> redisTemplate) {
         this.redisTemplate = redisTemplate;
-    }
-
-    public void init() {
-        // set redisTemplate dbIndex
     }
 
     /**
@@ -111,8 +108,8 @@ public class DefaultRedisCacheManager implements RedisCacheManager {
                 @Override
                 public Object doInRedis(RedisConnection connection) throws DataAccessException {
                     selectDb(connection);
-                    byte[] keybytes = getStringSerializer().serialize(key);
-                    connection.setEx(keybytes, timeout, value);
+                    byte[] keyBytes = getStringSerializer().serialize(key);
+                    connection.setEx(keyBytes, timeout, value);
                     return null;
                 }
 
@@ -654,7 +651,7 @@ public class DefaultRedisCacheManager implements RedisCacheManager {
         });
     }
 
-    // singletone
+    // singleton
     public RedisCache getRedisCache() {
         if (redisCache == null) {
             redisCache = new RedisCache(this);
