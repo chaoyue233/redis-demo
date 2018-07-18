@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:redis="http://www.springframework.org/schema/redis"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+						http://www.springframework.org/schema/beans/spring-beans-4.1.xsd http://www.springframework.org/schema/redis http://www.springframework.org/schema/redis/spring-redis.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+
+    <!-- 缓存 redis配置 -->
+    <bean id="redisConnectionFactory"
+          class="org.springframework.data.redis.connection.jedis.JedisConnectionFactory"
+          p:host-name="192.168.10.201" p:port="6379" p:password=""
+          p:timeout="15000" p:usePool="true" p:database="0">
+        <constructor-arg index="0" ref="cacheJedisPoolConfig"/>
+    </bean>
+    <bean id="cacheJedisPoolConfig" class="redis.clients.jedis.JedisPoolConfig">
+        <property name="maxTotal" value="10"/>
+        <property name="maxIdle" value="300"/>
+        <property name="minIdle" value="9"/>
+        <property name="maxWaitMillis" value="1000"/>
+        <property name="testOnBorrow" value="true"/>
+    </bean>
+
+    <bean id="stringCacheRedisTemplate" class="org.springframework.data.redis.core.StringRedisTemplate"
+          p:connection-factory-ref="redisConnectionFactory"/>
+
+    <bean id="cacheRedisTemplate" class="org.springframework.data.redis.core.RedisTemplate"
+          p:connection-factory-ref="redisConnectionFactory"/>
+
+    <bean id="defaultRedisCacheManager"
+          class="com.chaoyue.redis.DefaultRedisCacheManager">
+        <property name="redisTemplate" ref="cacheRedisTemplate"/>
+        <property name="dbIndex" value="0"/>
+    </bean>
+
+    <!-- 定义Spring Redis的序列化器 -->
+    <bean id="stringRedisSerializer" class="org.springframework.data.redis.serializer.StringRedisSerializer"/>
+    <bean id="jsonRedisSerializer"
+          class="org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer"/>
+
+    <!-- 定义Redis 监听类 -->
+    <bean id="redisMsgListener" class="com.chaoyue.redis.RedisMsgListener"/>
+
+    <!-- 注册Redis消息订阅的监听器 -->
+    <redis:listener-container>
+        <redis:listener ref="redisMsgListener" serializer="jsonRedisSerializer" method="onMessage"
+                        topic="chaoyue_test_topic"/>
+    </redis:listener-container>
+
+    <context:component-scan base-package="com.chaoyue.redis"/>
+
+</beans>
